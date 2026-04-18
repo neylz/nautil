@@ -37,6 +37,12 @@ class Artifact:
         src.copy_files(path.join(self.path, dest))
         return self
 
+    def clone(self):
+        """Create an independent artifact copy with the same current workspace content."""
+        cloned_artifact = Artifact(self.vars)
+        copytree(self.path, cloned_artifact.path, dirs_exist_ok=True)
+        return cloned_artifact
+
 
     @staticmethod
     def _pre_output_cleanup(target_path: PathLike):
