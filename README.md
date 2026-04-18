@@ -10,6 +10,8 @@ Nautil is an Artifact Compilation Toolkit. Like Gradle or Github Action, but ded
 
 This list is open for contributions. If you have created a plugin, please submit a pull request to add it to this list.
 
+To create your own plugin, get started with the [plugin tempalate](https://github.com/neylz/nautil-plugin-template).
+
 | PyPi | Github | Description |
 | ---- | ------ | ----------- |
 | [`nautil-utils`](https://pypi.org/project/nautil-utils/) | [`neylz/nautil-utils`](https://github.com/nautil/nautil-utils) | Basic actions and utilities |
