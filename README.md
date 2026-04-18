@@ -12,5 +12,5 @@ This list is open for contributions. If you have created a plugin, please submit
 
 | PyPi | Github | Description |
 | ---- | ------ | ----------- |
-| [`nautil-us`](https://pypi.org/project/nautil-us/) | [`neylz/nautil-us`](https://github.com/nautil/nautil-us) | Basic actions and utilities |
+| [`nautil-utils`](https://pypi.org/project/nautil-utils/) | [`neylz/nautil-utils`](https://github.com/nautil/nautil-utils) | Basic actions and utilities |
 | [`nautil-mc`](https://pypi.org/project/nautil-mc/) | [`neylz/nautil-mc`](https://github.com/nautil/nautil-mc) | Minecraft-related actions |
