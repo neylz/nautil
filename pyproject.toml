@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69", "setuptools-scm[toml]>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nautil"
+description = "Nautil is a framework for compiling software artifacts."
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["framework", "packaging", "build", "artifact", "compilation", "automation", "devops", "ci", "cd", "plugin"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Operating System :: OS Independent",
+]
+dependencies = []
+
+dynamic = ["version"]
+
+[tool.setuptools.packages.find]
+include = ["nautil*"]
+
+[tool.setuptools_scm]
+tag_regex = "^(?P<version>\\d+\\.\\d+\\.\\d+)$"
+version_scheme = "no-guess-dev"
+local_scheme = "no-local-version"
+fallback_version = "0.0.0"
