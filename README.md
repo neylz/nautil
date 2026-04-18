@@ -14,5 +14,5 @@ To create your own plugin, get started with the [plugin tempalate](https://githu
 
 | PyPi | Github | Description |
 | ---- | ------ | ----------- |
-| [`nautil-utils`](https://pypi.org/project/nautil-utils/) | [`neylz/nautil-utils`](https://github.com/nautil/nautil-utils) | Basic actions and utilities |
-| [`nautil-mc`](https://pypi.org/project/nautil-mc/) | [`neylz/nautil-mc`](https://github.com/nautil/nautil-mc) | Minecraft-related actions |
+| [`nautil-utils`](https://pypi.org/project/nautil-utils/) | [`neylz/nautil-utils`](https://github.com/neylz/nautil-utils) | Basic actions and utilities |
+| [`nautil-mc`](https://pypi.org/project/nautil-mc/) | [`neylz/nautil-mc`](https://github.com/neylz/nautil-mc) | Minecraft-related actions |
