@@ -32,9 +32,22 @@ class Artifact:
     
     # == default actions ==
 
-    def use(self, src: Source, dest: PathLike = "."):
-        """Import files from a source into the artifact."""
-        src.copy_files(path.join(self.path, dest))
+    def use(self, src: Source | Artifact, dest: PathLike = "."):
+        """Import files from a source-like object into the artifact."""
+        target_path = path.join(self.path, dest)
+
+        if isinstance(src, Artifact):
+            copytree(src.path, target_path, dirs_exist_ok=True)
+            return self
+
+        copy_files = getattr(src, "copy_files", None)
+        if not callable(copy_files):
+            raise TypeError(
+                "Artifact.use expected a Source-like object with copy_files(dest) "
+                f"or an Artifact, got {type(src).__name__}"
+            )
+
+        copy_files(target_path)
         return self
 
     def clone(self):
