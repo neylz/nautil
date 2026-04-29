@@ -1,0 +1,142 @@
+---
+title: nautil-mc
+description: A plugin that provides Minecraft Java related methods for Nautil.
+---
+
+import Project from '/src/components/Project.astro'
+import Flag from '/src/components/Flag.astro'
+import { Aside } from '@astrojs/starlight/components';
+
+<Project git="https://github.com/SurenaStudio/nautil-mc" pypi="nautil-mc" fullName="Surena Studio" organization />
+
+## Installation
+
+```bash
+pip install nautil-mc
+```
+
+## Actions
+
+```python
+# import actions using (even if your IDE says it is unused):
+import nautil_mc.actions
+```
+
+
+### ``dat_set`` <Flag variant="experimental" size="large"/>
+    #### Parameters
+    - ``file: PathLike`` <Flag variant="templated"/>
+        <br/>The path to the NBT file to modify, relative to the artifact.
+    - ``key: str`` <Flag variant="templated"/>
+        <br/>The NBT path to the value to set, for example "Data.LevelName" or "Data.Player.Inventory[0].id".
+    - ``value: Any`` <Flag variant="templated-if"/>
+        <br/>The value to set, which will be converted to an appropriate NBT tag. You can also pass ``nbtlib`` tag instances directly if you want more control over the types.
+        <br/>Templated if a ``str`` is passed.
+
+    #### Description
+
+    Sets a value in a NBT file. Can be ``.dat`` or any other NBT-formatted file.
+    <Aside type="danger">``dat_set`` for now supports only setting data on existing fields!</Aside>
+
+    #### Example
+
+    ```python
+    a = Artifact(env).use(...)\
+        .dat_set("level.dat", "Data.allowCommands", False)
+    ```
+    ---
+
+### ``datapacks_zip_format``
+    #### Parameters
+    - ``zip: bool = True``
+        <br/>Whether to format datapacks in a zip format (true) or folder format (false).
+
+    #### Description
+    Uniformly format datapacks in a zip or folder format.
+
+    #### Example
+
+    ```python
+    a = Artifact(env).use(...)\
+        .datapacks_zip_format(zip=True)
+    ```
+
+    ---
+
+### ``level_rename``
+    #### Parameters
+    - ``name: str`` <Flag variant="templated"/>
+        <br/>The new name for the world, which will be set in the "level.dat" file.
+    - ``file: PathLike = "level.dat"`` <Flag variant="templated"/>
+        <br/>The path to the "level.dat" file to modify, relative to the artifact.
+
+    #### Description
+    Renames a Minecraft world by setting the "Data.LevelName" field in the specified "level.dat" file.
+
+    #### Example
+
+    ```python
+    a = Artifact(env).use(...)\
+        .level_rename("A map named using Nautil!")
+    ```
+
+    ---
+
+### ``scoreboard_set``
+    #### Parameters
+    - ``player: str`` <Flag variant="templated"/>
+        <br/>The player for whom to set the scoreboard value.
+    - ``objective: str`` <Flag variant="templated"/>
+        <br/>The path to the "level.dat" file to modify, relative to the artifact.
+    - ``value: int | str`` <Flag variant="templated-if"/>
+        <br/>The value to set for the scoreboard entry.
+        <br/>Templated if a ``str`` is passed. But will be casted to an ``int`` after rendering.
+
+    #### Description
+    Set a scoreboard value for a player and a given objective. Creates the objective if it doesn't exist.
+
+    #### Example
+
+    ```python
+    a = Artifact(env).use(...)\
+        .scoreboard_set("nautil.build", "?builtWithNautil", 1)
+    ```
+
+    ---
+
+### ``storage_set`` <Flag variant="experimental" size="large"/>
+    #### Parameters
+    - ``storage: str`` <Flag variant="templated"/>
+        <br/>The storage namespaced identifier. For example, "nautil:build". if the namespace is omitted, "minecraft" will be used by default.
+    - ``path: str | nbtlib.Path`` <Flag variant="templated-if"/>
+        <br/>The key path within the storage. Supports both string paths like "foo.bar[0].baz".
+        <br/>Templated if a ``str`` is passed.
+    - ``value: Any`` <Flag variant="templated-if"/>
+        <br/>The value to set for the storage entry.
+        <br/>Templated if a ``str`` is passed.
+
+    #### Description
+    Set a storage value for a given storage and path. Creates the data storage if it doesn't exist.
+
+    <Aside type="danger">
+        ``storage_set`` for now supports only setting data on existing fields. If you want to create new fields, you'll need to do so manually. 
+    
+        **Example**
+        ```python
+        # valid
+        a = Artifact(env).use(...)\
+            .storage_set("nautil:build", "sub_component", {"nested": {"nested2": {}}})\
+            .storage_set("nautil:build", "sub_component.nested.nested2.value", 1)
+
+        # invalid - will error because "new_component" doesn't exist
+        a = Artifact(env).use(...)\
+            .storage_set("nautil:build", "new_component.nested.nested2.value", 1)
+        ```
+    </Aside>
+
+    #### Example
+    ```python
+    a = Artifact(env).use(...)\
+         .storage_set("nautil:build", "built_with_nautil", True)
+    ```
+    ---

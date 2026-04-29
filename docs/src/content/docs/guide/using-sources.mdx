@@ -1,0 +1,83 @@
+---
+title: Using Sources
+description: A guide to understanding and using Sources in Nautil.
+---
+
+A **Source** defines how and from where Nautil imports files into an Artifact. Before an Artifact can be transformed, it has to pull files from a Source via the `.use()` function. 
+
+While Nautil defines the architectural interfaces, the actual Source providers are implemented in the `nautil-utils` plugin.
+
+## Standard Sources (`nautil-utils`)
+Be sure to install `nautil-utils` to access these utilities. You can read more about them in the [nautil-utils plugin docs](/plugin/nautil-utils/#sources).
+
+### `LocalSource`
+Retrieves files directly from a local filesystem path. This is the most common use case.
+
+```python
+from nautil_utils.source import LocalSource
+
+# Imports C:/assets/icons into the artifact's 'assets' folder
+a.use(
+    LocalSource("C:/assets"),
+    dest="assets",
+    src_path="icons"
+)
+```
+
+### `GitSource`
+Directly clones a remote Git repository securely into your artifact workspace. Supports specific branches and commits.
+
+```python
+from nautil_utils.source import GitSource
+
+a.use(
+    GitSource("https://github.com/SurenaStudio/nautil", branch="main", depth=1),
+    dest="nautil-source"
+)
+```
+
+### `ArtifactSource`
+Allows chaining artifact outputs. It turns an existing `Artifact` pipeline output back into a Source stream. Excellent for creating "base" distributions and then building multiple parameterized targets from it.
+
+```python
+from nautil_utils.source import ArtifactSource
+
+base_artifact = Artifact(env).use(...)
+
+target1 = Artifact(env).use(ArtifactSource(base_artifact, root="."), dest=".")
+target2 = Artifact(env).use(ArtifactSource(base_artifact, root="."), dest=".")
+```
+
+## Making Custom Sources
+Sometimes you may stream content from esoteric environments like S3 buckets, internal corporate APIs, or generated synthetic data streams. Nautil makes this straightforward.
+
+To create your own custom Source, simply implement a class with a `copy_files(dest: PathLike, src_path: PathLike, overwrite: bool)` method, or inherit from `nautil.core.Source`.
+
+```python
+import os
+import shutil
+from nautil.core import Source
+
+class MySyntheticSource(Source):
+    def __init__(self, data: str):
+        self.data = data
+
+    def copy_files(self, dest: os.PathLike, src_path: os.PathLike, overwrite: bool = False):
+        # 1. Resolve output coordinates securely
+        dest_path = os.path.normpath(dest)
+        
+        # 2. Check override rules
+        if os.path.exists(dest_path) and not overwrite:
+            raise FileExistsError(f"Destination already exists: {dest_path}")
+        
+        # 3. Simulate or fetch files dynamically to the destination!
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        with open(dest_path, "w") as f:
+            f.write(self.data)
+```
+
+You can then pass your custom Source straight into `.use()` natively!
+
+```python
+a.use(MySyntheticSource("hello world!"), dest="hello.txt")
+```

@@ -1,0 +1,82 @@
+---
+title: Using Artifacts
+description: A guide to understanding and using Artifacts in Nautil.
+---
+
+import Flag from '/src/components/Flag.astro';
+
+In Nautil, an **Artifact** is the central concept for managing your build pipeline. It represents an isolated, temporary workspace where files are imported, transformed, and eventually packaged. 
+
+## The Temporary Workspace
+When you instantiate an `Artifact`, an isolated temporary directory is created on the filesystem. Every action you chain onto this `.use()`s or modifies files exclusively within this directory, keeping your source code safe and clean.
+
+```python
+from nautil.core import Artifact
+
+# A new temporary directory is created
+artifact = Artifact({"VERSION": "1.0.0"})
+```
+
+When the `Artifact` instance is garbage collected, the temporary directory is automatically deleted, ensuring no leftovers are left on your machine. You don't need to manually clean up workspaces.
+
+## Importing Files with `.use()`
+The `use` method introduces files into the current artifact workspace. It accepts any `Source`-like object (typically from `nautil-utils`) alongside destination routing.
+
+```python
+artifact.use(
+    LocalSource("src"),     # Source to import from
+    dest=".",               # Where to place them inside the artifact
+    src_path="assets",      # Sub-directory from the source (optional)
+    overwrite=True          # Overwrite existing files? (optional)
+)
+```
+
+## Variable Templating
+Nautil possesses its own built-in templating engine designed to resolve dynamic variables. Action parameters flagged as "templated" are resolved against the `vars` dictionary injected when the `Artifact` was instantiated. 
+
+You can use the `.parset()` method natively inside custom plugins, or rely on variable substitution directly in actions.
+
+```python
+artifact = Artifact({
+    "ENV_NAME": "production",
+    "VER": "2.4.1"
+})
+
+# Values like "$ENV_NAME" will automatically be substituted 
+# with "production" if the executed action supports parameter templating.
+```
+
+In the plugin documentation, a parameter with the flag <Flag variant="templated" /> means that it supports this variable substitution. A flag <Flag variant="templated-if" /> indicates that the parameter is only templated if a specific condition is met.
+
+## Logging & Identification
+While building, it's often confusing to read flat terminal logs—especially when orchestrating multi-target deployments concurrently. Artifacts have a native `.log(message)` method that evaluates variables. 
+
+Even better, Nautil intercepts two specific keys (`$TARGET` and `$ARTIFACT`) to automatically prefix all artifact logs!
+
+```python
+artifact = Artifact({
+    "TARGET": "Windows", 
+    "ARTIFACT": "MyApp"
+})
+
+artifact.log("Starting artifact compilation...")
+# Output: [Windows-MyApp] Starting artifact compilation...
+```
+
+If these aren't defined, the log prefix defaults to `[?]`.
+
+## Packaging and Outputs
+After performing transformations natively over your artifact, you eventually export it to the final destination via the `.output()` builder method.
+
+```python
+artifact.output(
+    output_path="builds",               # Base output directory
+    name="$ARTIFACT-$TARGET-v$VERSION", # Name string, evaluated via templating 
+    format=Artifact.OutputFormat.ZIP    # Outputformat (ZIP or DIRECTORY)
+)
+```
+
+### Supported Formats
+There are two primary output formats:
+- `Artifact.OutputFormat.ZIP`: Compresses the workspace into a standalone `.zip` archive.
+- `Artifact.OutputFormat.DIRECTORY`: Outputs the raw flat filesystem as a standard directory, ideal for testing or local usage.

@@ -1,0 +1,38 @@
+---
+title: Installation
+description: A guide to install Nautil and plugins.
+---
+
+Nautil is distributed as a standard Python package. It requires Python 3.8 or newer.
+
+## Installing the Core Toolkit
+
+To install the core Nautil toolkit, use standard package managers like `pip`:
+
+```bash
+pip install nautil
+```
+
+## Installing the Standard Utilities
+
+While `nautil` provides the core pipeline layout, sources, and artifact management capabilities, everyday file manipulation methods (like `copy`, `move`, `archive`, `filter`) are deliberately shipped in a separate package called `nautil-utils`. 
+
+It is highly recommended to install both together, as `nautil-utils` acts as the de-facto "standard library" for Nautil:
+
+```bash
+pip install nautil nautil-utils
+```
+
+## Installing Additional Plugins
+
+The Nautil ecosystem relies heavily on plugins to provide specific domain actions (e.g. Minecraft map manipulation, web deployment methods, etc.). 
+
+You can install any plugin via `pip` alongside Nautil:
+
+```bash
+pip install nautil-mc
+```
+
+Once installed, simply import their action modules in your build scripts to register their methods automatically!
+
+

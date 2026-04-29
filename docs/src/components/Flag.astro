@@ -1,0 +1,32 @@
+---
+import { Badge } from '@astrojs/starlight/components';
+
+interface Props {
+  variant: 'experimental' | 'templated' | 'templated-if';
+  size?: 'small' | 'medium' | 'large';
+}
+
+const { variant, size } = Astro.props;
+
+const map = {
+  experimental: {
+    text: 'Experimental',
+    variant: 'caution' as const,
+  },
+  templated: {
+    text: 'Templated',
+    variant: 'note' as const,
+  },
+  "templated-if": {
+    text: 'Templated*',
+    variant: 'tip' as const,
+  }
+} as const;
+---
+
+
+<Badge
+  text={map[variant].text}
+  variant={map[variant].variant}
+  size={size}
+/>

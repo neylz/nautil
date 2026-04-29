@@ -1,0 +1,79 @@
+---
+title: Create your first custom Action
+description: A guide to create your first custom Action.
+---
+
+Nautil is extremely extensible. Its entire action system is driven by standard Python decorators. You can easily define custom actions straight in your build scripts without needing to publish a full plugin.
+
+## The `@action` Decorator
+
+To create a new action, import the `@action` decorator from `nautil.plugin` and the `Artifact` class.
+
+An action definition involves two parts:
+1. The **Action Wrapper**: Receives the `Artifact` object and your custom parameters.
+2. The **Step Execution Function**: Returned by the wrapper, it receives the `workspace` absolute path to operate upon when the step is actually executed.
+
+### Example: A Custom Search and Replace
+
+Let's write an action that replaces a specific string inside text files throughout the workspace.
+
+```python
+import os
+from nautil.plugin import action
+from nautil.core import Artifact
+
+@action("replace_text")
+def replace_text(artifact: Artifact, target_file: str, old_str: str, new_str: str):
+    """
+    Replaces `old_str` with `new_str` inside the specified target_file.
+    Supports variables templating natively!
+    """
+
+    def step(workspace: str):
+        # We can parse string parameters to support $VARIABLE replacement
+        _file = artifact.parset(target_file)
+        _old = artifact.parset(old_str)
+        _new = artifact.parset(new_str)
+
+        # Log to the standard Nautil output stream explicitly
+        artifact.log(f"replace_text(file={_file}, old={_old}, new={_new})")
+
+        # Resolve the full path inside the temporary workspace
+        full_path = os.path.normpath(os.path.join(workspace, _file))
+
+        if not os.path.isfile(full_path):
+            artifact.log(f"WARNING: {_file} not found.")
+            return
+
+        with open(full_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        content = content.replace(_old, _new)
+
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    return step
+```
+
+### Using Your Custom Action
+
+As soon as the `@action` decorator parses your function, it is dynamically registered onto the `Artifact` class!
+
+```python
+# Create the artifact
+a = Artifact({"AUTHOR": "Alice"})
+
+# Use the action like any native method
+a.use(LocalSource("src"), dest=".")\\
+ .replace_text("README.md", "Author: Unknown", "Author: $AUTHOR")\\
+ .output()
+```
+
+## Writing Great Actions
+
+- **Use `artifact.parset(my_string)`**: Always pass strings through the parsing engine to support Nautil variable substitution (`$MY_VAR`).
+- **Use `artifact.log(...)`**: Gives your action consistent console output with the rest of the Nautil pipeline.
+- **Isolate execution**: Keep file modifications within the `workspace` path provided to the `step()` function. Wait to touch files until `step()` is called, as that represents the execution phase in the temporary container.
+
+

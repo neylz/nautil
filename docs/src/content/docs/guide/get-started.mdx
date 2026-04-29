@@ -1,0 +1,62 @@
+---
+title: Get Started
+description: A guide to get you started with Nautil.
+---
+
+Nautil pipelines are just standard Python scripts. They use a fluent, chainable API built around the `Artifact` class.
+
+An **Artifact** represents a temporary workspace containing files and directories that you manipulate step by step, before eventually packaging them up into an output directory or archive.
+
+## Your First Build Script
+
+Once ``nautil`` and ``nautil-utils`` are [installed](/guide/install), let's create a straightforward build script that imports a source folder, performs some basic cleanup, and packages it into a zip file.
+
+Create a file named `build.py` in your project:
+
+```python
+import os
+
+# 1. Import the Core components
+from nautil.core import Artifact
+from nautil_utils.source import LocalSource
+
+# 2. Import plugins to register their actions
+import nautil_utils.actions
+
+def main():
+    # Environment variables or configuration for this build
+    env = {
+        "VERSION": "1.0.0",
+        "PROJECT_NAME": "MyApp"
+    }
+
+    # Initialize a new Artifact with the given environment context
+    artifact = Artifact(env)
+
+    # Chain actions sequentially
+    artifact\
+        .use(LocalSource("src"), dest=".")\
+        .remove_empty(files=True, dirs=True)\
+        .mkdir("logs")\
+        .output("dist", "$PROJECT_NAME-$VERSION", format=Artifact.OutputFormat.ZIP)
+
+if __name__ == "__main__":
+    main()
+```
+
+## Running the Build
+
+Since this is a standard Python script, you can execute it like any other python file:
+
+```bash
+python build.py
+```
+
+Under the hood:
+1. **`Artifact(env)`** creates a temporary directory on your machine.
+2. **`.use(...)`** uses `LocalSource` from `nautil-utils` to copy the `src` directory into the temporary workspace.
+3. **`.remove_empty(...)`** (provided by `nautil-utils`) scans the temporary workspace and deletes all empty files and folders.
+4. **`.mkdir("logs")`** creates a new `logs` directory inside the artifact.
+5. **`.output(...)`** archives the contents of the temporary workspace into a zip file located at `dist/MyApp-1.0.0.zip` using the environment variables defined earlier (`$PROJECT_NAME-$VERSION`). The temporary workspace is safely cleaned up automatically.
+
+

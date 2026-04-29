@@ -1,0 +1,433 @@
+---
+title: nautil-utils
+description: A plugin that provides utility methods for Nautil.
+---
+
+
+import Project from '/src/components/Project.astro'
+import Flag from '/src/components/Flag.astro'
+import { Aside } from '@astrojs/starlight/components';
+
+
+<Project git="https://github.com/neylz/nautil-utils" pypi="nautil-utils" fullName="Neylz" />
+
+## Installation
+
+```bash
+pip install nautil-utils
+```
+
+## Actions
+
+```python
+# import actions using (even if your IDE says it is unused):
+import nautil_utils.actions
+```
+
+
+### ``archive``
+	#### Parameters
+	- ``source_path: str`` <Flag variant="templated"/>
+		<br/>The path to the file or directory to archive, relative to the artifact.
+	- ``output_path: str`` <Flag variant="templated"/>
+		<br/>The path to the archive file to create, relative to the artifact.
+	- ``archive_format: str = "zip"`` <Flag variant="templated"/>
+		<br/>Archive format to create. Supported: ``zip``, ``tar``, ``gztar``, ``bztar``, ``xztar``.
+	- ``overwrite: bool = True``
+		<br/>Whether to overwrite an existing archive at ``output_path``.
+
+	#### Description
+	Creates a zip or tar archive from a file or directory inside the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.archive("dist", "dist.zip", archive_format="zip")
+	```
+	---
+
+### ``cp``
+	#### Parameters
+	- ``source_path: str`` <Flag variant="templated"/>
+		<br/>The file or directory to copy, relative to the artifact.
+	- ``dest_path: str`` <Flag variant="templated"/>
+		<br/>The destination path (file or directory), relative to the artifact.
+	- ``overwrite: bool = True``
+		<br/>Whether to overwrite the destination if it already exists.
+
+	#### Description
+	Copies a file or directory within the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.cp("assets/logo.png", "static/logo.png")
+	```
+	---
+
+### ``extract``
+	#### Parameters
+	- ``archive_path: str`` <Flag variant="templated"/>
+		<br/>The archive file to extract, relative to the artifact.
+	- ``dest_path: str = "."`` <Flag variant="templated"/>
+		<br/>The destination directory to extract into, relative to the artifact.
+	- ``overwrite: bool = True``
+		<br/>Whether to overwrite existing files in the destination directory.
+
+	#### Description
+	Extracts a zip or tar archive into a directory within the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.extract("assets.zip", "assets/")
+	```
+	---
+
+### ``filter``
+	#### Parameters
+	- ``filter_func: FilePredicate``
+		<br/>Predicate called with ``(file_name, file_path, workspace)``; return ``True`` to delete.
+	- ``root: str = "."`` <Flag variant="templated"/>
+		<br/>Root directory to scan inside the workspace.
+
+	#### Description
+	Deletes files and directories that match the given predicate.
+
+    <Aside type="tip">
+        look into the [Filter Predicate Builders](#filter-predicate-builders) section below for utilities to build common predicates, such as regex or glob's .ignore-style predicates.
+    </Aside>
+
+	#### Example
+	```python
+	import re
+	from nautil_utils.filter import make_regex_predicate
+
+	a = Artifact(env).use(...)
+		.filter(make_regex_predicate(re.compile(r".*\\.bak$")), root="build/")
+	```
+	---
+
+### ``foreach``
+	#### Parameters
+	- ``filter_func: FilePredicate``
+		<br/>Predicate called with ``(file_name, file_path, workspace)``; return ``True`` to process.
+	- ``item_action: Callable[..., Any]``
+		<br/>Action callable invoked per match; supports multiple signatures.
+	- ``root: str = "."``
+		<br/>Root directory to scan inside the workspace.
+	- ``files: bool = True``
+		<br/>Whether to include files.
+	- ``dirs: bool = False``
+		<br/>Whether to include directories.
+	- ``recursive: bool = True``
+		<br/>Whether to traverse subdirectories.
+
+	#### Description
+	Runs an action for each file or directory that matches a predicate.
+
+	#### Example
+	```python
+	import os
+	import re
+	from nautil_utils.filter import make_regex_predicate
+
+	def delete_file(relative_path: str, workspace: str):
+		os.remove(os.path.join(workspace, relative_path))
+
+	a = Artifact(env).use(...)
+		.foreach(make_regex_predicate(re.compile(r".*\\.tmp$")), delete_file, root="build/")
+	```
+	---
+
+### ``json_minify``
+	#### Parameters
+	- ``remove_spaces: bool = True``
+		<br/>When true, writes compact JSON using ``","`` and ``":"`` separators.
+
+	#### Description
+	Minifies all ``.json`` files in the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.json_minify(remove_spaces=True)
+	```
+	---
+
+### ``json_set``
+	#### Parameters
+	- ``file: PathLike`` <Flag variant="templated"/>
+		<br/>The JSON file to modify, relative to the artifact.
+	- ``key: str`` <Flag variant="templated"/>
+		<br/>Dot path (supports indices) to set, e.g. ``parent.child[0].key``.
+	- ``value: object`` <Flag variant="templated-if"/>
+		<br/>Value to set. Templated if a ``str`` is passed.
+
+	#### Description
+	Sets a value in a JSON file using a dot-path key with optional array indices.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.json_set("config.json", "build.targets[0]", "release")
+	```
+	---
+
+### ``keep``
+	#### Parameters
+	- ``relative_paths: list[str]`` <Flag variant="templated"/>
+		<br/>Paths to preserve. Subdirectories under these paths are preserved too.
+	- ``root: str = "."`` <Flag variant="templated"/>
+		<br/>Root directory to scan inside the workspace.
+	- ``files: bool = True``
+		<br/>Whether to consider files.
+	- ``dirs: bool = True``
+		<br/>Whether to consider directories.
+
+	#### Description
+	Deletes everything under ``root`` except the specified paths.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.keep(["dist/", "README.md"], root=".")
+	```
+	---
+
+### ``mkdir``
+	#### Parameters
+	- ``dir_path: str`` <Flag variant="templated"/>
+		<br/>Directory path to create, relative to the artifact.
+	- ``parents: bool = True``
+		<br/>Create parent directories if they do not exist.
+	- ``exist_ok: bool = True``
+		<br/>Ignore if the directory already exists.
+
+	#### Description
+	Creates a directory inside the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.mkdir("build/output", parents=True)
+	```
+	---
+
+### ``move``
+	#### Parameters
+	- ``source_path: str`` <Flag variant="templated"/>
+		<br/>The file or directory to move, relative to the artifact.
+	- ``dest_path: str`` <Flag variant="templated"/>
+		<br/>The destination path, relative to the artifact.
+
+	#### Description
+	Moves a file or directory within the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.move("staging/app.jar", "release/app.jar")
+	```
+	---
+
+### ``py``
+	#### Parameters
+	- ``script_path: str`` <Flag variant="templated"/>
+		<br/>Python script to execute, relative to the artifact.
+	- ``execution_location: str | None = None`` <Flag variant="templated"/>
+		<br/>Working directory for the script, relative to the artifact.
+
+	#### Description
+	Executes a Python script from the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.py("scripts/build.py", execution_location="scripts")
+	```
+	---
+
+### ``remove_empty``
+	#### Parameters
+	- ``relative_paths: list[str] = []`` <Flag variant="templated"/>
+		<br/>Paths to scan. When empty, the entire workspace is scanned.
+	- ``files: bool = True``
+		<br/>Whether to remove empty files.
+	- ``dirs: bool = True``
+		<br/>Whether to remove empty directories.
+
+	#### Description
+	Removes empty files and/or directories in the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.remove_empty(["build/", "dist/"])
+	```
+	---
+
+### ``rm``
+	#### Parameters
+	- ``target_path: str`` <Flag variant="templated"/>
+		<br/>File or directory to remove, relative to the artifact.
+	- ``recursive: bool = True``
+		<br/>Whether to remove directories recursively.
+	- ``missing_ok: bool = True``
+		<br/>Whether to ignore missing paths.
+
+	#### Description
+	Removes a file or directory from the artifact workspace.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.rm("build/tmp", recursive=True)
+	```
+	---
+
+### ``touch``
+	#### Parameters
+	- ``file_path: str`` <Flag variant="templated"/>
+		<br/>File to create or update, relative to the artifact.
+	- ``create_parents: bool = True``
+		<br/>Whether to create parent directories if needed.
+
+	#### Description
+	Creates an empty file or updates its modification time.
+
+	#### Example
+	```python
+	a = Artifact(env).use(...)
+		.touch("build/.keep")
+	```
+	---
+
+
+## Sources
+
+### ``ArtifactSource``
+	#### Parameters
+	- ``artifact: Artifact``
+		<br/>An existing artifact to use as a source.
+	- ``root: PathLike = "."``
+		<br/>Root path inside the artifact to copy from.
+	- ``compressed_format: str | None = None``
+		<br/>Optional archive format. Supported: ``zip``, ``tar``, ``gztar``.
+
+	#### Description
+	Copies files from another artifact. When ``compressed_format`` is set, the source is archived before copying.
+
+	#### Example
+	```python
+	from nautil_utils.source import ArtifactSource
+
+	base = Artifact(env).use(...)
+	pack = Artifact(env)
+	pack.use(ArtifactSource(base, root="dist"), dest=".")
+	```
+	---
+
+### ``GitSource``
+	#### Parameters
+	- ``git_url: str``
+		<br/>Git repository URL to clone.
+	- ``branch: str = "main"``
+		<br/>Branch to clone.
+	- ``specific_commit: str | None = None``
+		<br/>Optional commit hash to checkout after cloning.
+	- ``depth: int = 1``
+		<br/>Clone depth for shallow clones.
+
+	#### Description
+	Clones a Git repository and exposes files as a source.
+
+	#### Example
+	```python
+	from nautil_utils.source import GitSource
+
+	a = Artifact(env).use(
+		GitSource("https://github.com/neylz/nautil-utils"),
+		dest="vendor/nautil-utils",
+		src_path="nautil_utils"
+	)
+	```
+	---
+
+### ``LocalSource``
+	#### Parameters
+	- ``path: PathLike``
+		<br/>Local directory or file system root path to use as the source.
+
+	#### Description
+	Copies files from a local path into the artifact.
+
+	#### Example
+	```python
+	from nautil_utils.source import LocalSource
+
+    # Copying a directory
+	a = Artifact(env).use(
+		LocalSource("C:/assets"),
+		dest="assets",
+		src_path="icons"
+	)
+
+    # Copying a single file
+    a = Artifact(env).use(
+        LocalSource("C:/assets"),
+        dest="static/logo.png",
+        src_path="icons/logo_512x512.png"
+    )
+	```
+	---
+
+
+## Filter Predicate Builders
+
+Filters are using predicates. Below are some utilities to build common predicates. You can of course write your own predicate function.
+
+To write a custom predicate, you must input a ``nautil_utils.types.FilePredicate``, which is a callable with the signature
+``(file_name: str, file_path: str, workspace: str) -> bool`` (``Callable[[str, str, str], bool]``).
+The predicate should return ``True`` for paths that should be matched (e.g. deleted by the ``filter`` action).
+
+### ``make_dotignore_predicate``
+	#### Parameters
+	- ``ignore_file_name: str``
+		<br/>The name (or path) of the .ignore file to read, for example ``.gitignore``.
+	- ``workspace_relative: bool = True``
+		<br/>When true, resolves ``ignore_file_name`` relative to the workspace root.
+
+	#### Description
+	Builds a predicate that follows .ignore-style rules. The returned predicate matches paths that should be ignored.
+
+	#### Example
+	```python
+	from nautil_utils.filter import make_dotignore_predicate
+
+	ignore_predicate = make_dotignore_predicate(".packignore")
+
+	a = Artifact(env).use(...)
+		.filter(ignore_predicate)
+	```
+	---
+
+### ``make_regex_predicate``
+	#### Parameters
+	- ``pattern: re.Pattern``
+		<br/>Compiled regex used to test relative paths.
+
+	#### Description
+	Builds a predicate that matches paths using a regular expression.
+
+	#### Example
+	```python
+	import re
+	from nautil_utils.filter import make_regex_predicate
+
+	a = Artifact(env).use(...)
+		.filter(make_regex_predicate(re.compile(r".*\.bak$")))
+	```
+	---
+
+

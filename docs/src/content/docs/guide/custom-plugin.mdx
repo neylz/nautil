@@ -1,0 +1,88 @@
+---
+title: Make Your Own Plugin
+description: A guide to create your own Nautil plugin.
+---
+
+When your custom actions become robust or project-agnostic, you may want to publish them as a fully reusable **Nautil Plugin**. A plugin is simply a Python package that registers Nautil actions when imported.
+
+To make things easy, we provide an official **[Plugin Template Repository](https://github.com/neylz/nautil-plugin-template/)**.
+
+## Generating your Plugin
+
+1. Navigate to the template generation page: **[Create your repository from nautil-plugin-template](https://github.com/new?template_name=nautil-plugin-template&template_owner=neylz)**.
+2. Choose a name (e.g. `nautil-myplugin`) and create the repository.
+3. Clone your new repository locally.
+
+### 1. Naming & Configuration
+
+First, rename the project details to match your new plugin:
+- Edit the `name` and `description` fields inside `pyproject.toml`.
+- Rename the root Python package folder from `nautil_plugin_template/` to `nautil_myplugin/`.
+
+### 2. Adding an Action
+
+Inside your package folder, there is an `actions` directory containing a `template.py` file.
+
+You can duplicate `template.py` for each new action you want to build. Because the template uses dynamic imports in `__init__.py`, adding an action file automatically exposes it.
+
+**Empty Action Template (`template.py`):**
+
+```python
+import os
+from nautil.plugin import action
+from nautil import Artifact
+
+@action("action_template")
+def action_template(artifact: Artifact):
+    """
+    You can add more parameters to the function: eg. ``action_template(artifact: Artifact, foo: bool)``
+    and this will permit you to pass more arguments to the action when you call it from a workflow, for example:
+
+    artifact = Artifact(...).use(...).action_template(True)
+    """
+    
+    def step(workspace: str):
+        # workspace is the path to the temporary directory where the artifact files are located. 
+        # You can read/write files here, and they will be included in the output artifact.
+        print("action_template - does strictly nothing")
+
+        # write what you want to do here, for example:
+        # if foo:
+        #     with open(os.path.join(workspace, "foo.txt"), "w") as f:
+        #         f.write("foo was true")
+
+    return step
+```
+
+When users want to use your plugin, they simply install it alongside your Nautil dependency:
+
+```bash
+pip install myplugin
+```
+
+And then import your actions namespace in their scripts:
+
+```python
+import nautil_myplugin.actions
+```
+
+### 3. Publishing to PyPI
+
+The template comes securely equipped with a GitHub Action workflow (`.github/workflows/cd.yml`) to automatically publish your plugin to the Python Package Index (PyPI).
+
+1. Go to [PyPI](https://pypi.org/) and navigate to **Your projects** -> **Publishing**.
+2. Scroll to the **Add a new pending publisher** section and fill in the form:
+   - **PyPI Project Name**: `nautil-myplugin` *(Must match `pyproject.toml`)*
+   - **Owner**: `YourGithubUsername`
+   - **Repository name**: `nautil-myplugin` *(Must match your GitHub repo)*
+   - **Workflow name**: `cd.yml`
+   - **Environment name**: *(leave blank)*
+3. Push a new GitHub Release (or Tag) to your GitHub repository. The workflow will run and publish your package to PyPI securely!
+
+### What about the license?
+The `nautil-plugin-template` is fully licensed under the **[Unlicense](https://unlicense.org/)**. This means you can do whatever you want with the template, with no restrictions. You are encouraged to license your own plugins under whichever license best suits your goals!
+
+
+## Documentation
+
+Contributions to this documentation are very welcome! If you want to contribute by adding your own plugin guide to this documentation, please submit a pull request with your changes.
