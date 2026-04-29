@@ -32,22 +32,25 @@ class Artifact:
     
     # == default actions ==
 
-    def use(self, src: Source | Artifact, dest: PathLike = "."):
-        """Import files from a source-like object into the artifact."""
+    def use(self, src: Source, dest: PathLike = ".", src_path: PathLike = ".", overwrite: bool = False):
+        """
+        Import files from a source-like object into the artifact.
+        
+        :param src: A source-like object that has a copy_files(dest, src_path) method.
+        :param dest: The destination path within the artifact where the files will be copied.
+        :param src_path: The path within the source where the files will be copied from.
+        :param overwrite: Whether to overwrite existing files at the destination.
+        """
         target_path = path.join(self.path, dest)
 
-        if isinstance(src, Artifact):
-            copytree(src.path, target_path, dirs_exist_ok=True)
-            return self
 
         copy_files = getattr(src, "copy_files", None)
         if not callable(copy_files):
             raise TypeError(
-                "Artifact.use expected a Source-like object with copy_files(dest) "
-                f"or an Artifact, got {type(src).__name__}"
+                "Artifact.use expected a Source-like object with copy_files(dest, src_path) method, but got an object of type {}".format(type(src).__name__)
             )
 
-        copy_files(target_path)
+        copy_files(target_path, src_path, overwrite)
         return self
 
     def clone(self):
@@ -79,11 +82,15 @@ class Artifact:
             format: The format of the artifact output.
         """
 
+
         if name is None:
             name = "artifact-" + uuid.uuid4().hex[:8]
         else:
-            name = Template(name).substitute(self.vars)
+            name = self.parset(name)
         output_path = path.join(output_path, name)
+
+
+        self.log(f"Outputting artifact to {output_path} as {format.name.lower()}")
 
         parent_dir = path.dirname(output_path)
         if parent_dir:
@@ -102,3 +109,23 @@ class Artifact:
             make_archive(archive_base, "zip", self.path)
         
         return self
+    
+
+    # == libs helper ==
+    def parset(self, template_str: str) -> str:
+        """Parse a string template with the artifact's context variables."""
+        return Template(template_str).substitute(self.vars)
+    
+    
+    def log(self, message: str):
+        """Log a message with the artifact's context variables."""
+        
+        prefix = "-".join([
+            "$TARGET" if self.vars.get("TARGET") else "",
+            "$ARTIFACT" if self.vars.get("ARTIFACT") else "",
+        ]).strip("-")
+        prefix = f"[{prefix}] " if prefix else "[?] "
+
+        message = prefix + message        
+
+        print(self.parset(message))
