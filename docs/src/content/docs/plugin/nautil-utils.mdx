@@ -163,6 +163,8 @@ import nautil_utils.actions
 		<br/>Dot path (supports indices) to set, e.g. ``parent.child[0].key``.
 	- ``value: object`` <Flag variant="templated-if"/>
 		<br/>Value to set. Templated if a ``str`` is passed.
+	- ``cast: type = None``
+		<br/>Optional type to cast the value to before setting.
 
 	#### Description
 	Sets a value in a JSON file using a dot-path key with optional array indices.
