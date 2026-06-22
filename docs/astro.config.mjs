@@ -27,6 +27,7 @@ export default defineConfig({
 						{ label: 'Using Artifacts', slug: 'guide/using-artifacts' },
 						{ label: 'Using Sources', slug: 'guide/using-sources' },
 						{ label: 'Custom Action', slug: 'guide/custom-action' },
+						{ label: 'Custom Output', slug: 'guide/custom-output' },
 						{ label: 'Custom Plugin', slug: 'guide/custom-plugin' },
 					],
 				},

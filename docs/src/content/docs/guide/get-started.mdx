@@ -17,7 +17,7 @@ Create a file named `build.py` in your project:
 import os
 
 # 1. Import the Core components
-from nautil.core import Artifact
+from nautil.core import Artifact, Zip
 from nautil_utils.source import LocalSource
 
 # 2. Import plugins to register their actions
@@ -38,7 +38,7 @@ def main():
         .use(LocalSource("src"), dest=".")\
         .remove_empty(files=True, dirs=True)\
         .mkdir("logs")\
-        .output("dist", "$PROJECT_NAME-$VERSION", format=Artifact.OutputFormat.ZIP)
+        .output("dist", "$PROJECT_NAME-$VERSION", format=Zip())
 
 if __name__ == "__main__":
     main()

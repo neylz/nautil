@@ -2,20 +2,18 @@ import tempfile
 import uuid
 import weakref
 
-from enum import Enum, auto
-from os import path, PathLike, makedirs, remove
-from shutil import copytree, make_archive, rmtree
+from os import path, PathLike, makedirs
+from shutil import copytree
 from string import Template
 
 from nautil.core.source import Source
+from nautil.core.output_format import OutputFormat, Zip
 
 
 
 
 class Artifact:
-    class OutputFormat(Enum):
-        DIRECTORY = auto()
-        ZIP = auto()
+    OutputFormat = OutputFormat
 
     def __init__(self, vars: dict):
         self._vars = dict(vars)
@@ -60,28 +58,23 @@ class Artifact:
         return cloned_artifact
 
 
-    @staticmethod
-    def _pre_output_cleanup(target_path: PathLike):
-        if path.isdir(target_path):
-            rmtree(target_path)
-        elif path.isfile(target_path):
-            remove(target_path)
-
     def output(
         self,
         output_path: PathLike = "dist",
         name: str = None,
-        format: OutputFormat = OutputFormat.ZIP
+        format: OutputFormat = None
     ):
         """
         Output the artifact to the specified path.
-        
+
         Args:
             output_path: The path where the artifact will be output.
             name: The name template of the artifact. Can use context variables. eg. `"$NAME-$VERSION-$PLATFORM.zip"`
             format: The format of the artifact output.
         """
 
+        if format is None:
+            format = Zip()
 
         if name is None:
             name = "artifact-" + uuid.uuid4().hex[:8]
@@ -90,24 +83,15 @@ class Artifact:
         output_path = path.join(output_path, name)
 
 
-        self.log(f"Outputting artifact to {output_path} as {format.name.lower()}")
+        self.log(f"Outputting artifact to {output_path} as {format.name}")
 
         parent_dir = path.dirname(output_path)
         if parent_dir:
             makedirs(parent_dir, exist_ok=True)
 
 
-        if format == self.OutputFormat.DIRECTORY:
-            self._pre_output_cleanup(output_path)
-            copytree(self.path, output_path)
+        format.write(self.path, output_path)
 
-        elif format == self.OutputFormat.ZIP:
-            archive_base = output_path[:-4] if output_path.endswith(".zip") else output_path
-            archive_path = f"{archive_base}.zip"
-
-            self._pre_output_cleanup(archive_path)
-            make_archive(archive_base, "zip", self.path)
-        
         return self
     
 

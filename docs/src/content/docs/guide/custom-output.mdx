@@ -1,0 +1,71 @@
+---
+title: Create your first custom Output
+description: A guide to create your own Artifact output format.
+---
+
+Nautil ships with two output formats — `Zip()` and `Directory()` — but the output system is fully extensible. The `OutputFormat` abstract base class lets you define your own format straight in your build scripts, or ship it from a plugin.
+
+## The `OutputFormat` Interface
+
+Every output format is a subclass of `OutputFormat`, imported from `nautil.core.output_format`. Implementing one means providing two members:
+
+1. The **`name`** property: a short, human-readable label used in Nautil's logs (e.g. `outputting artifact ... as tar.gz`).
+2. The **`write(source_path, output_path)`** method: receives the artifact workspace absolute path (`source_path`) and the resolved destination (`output_path`), and is responsible for producing the final output.
+
+```python
+# nautil.core.output_format
+
+class OutputFormat(ABC):
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
+    @abstractmethod
+    def write(self, source_path: PathLike, output_path: PathLike): ...
+```
+
+### Example: A `tar.gz` Output
+
+Let's write a format that packages the workspace into a gzip-compressed tarball.
+
+```python
+import tarfile
+from nautil.core.output_format import OutputFormat
+
+class TarGz(OutputFormat):
+    @property
+    def name(self) -> str:
+        return "tar.gz"
+
+    def write(self, source_path, output_path):
+        # Normalize the destination to end with .tar.gz
+        archive_path = output_path
+        if not archive_path.endswith(".tar.gz"):
+            archive_path += ".tar.gz"
+
+        # Clean up any previous output at this path
+        self._pre_output_cleanup(archive_path)
+
+        # Produce the archive from the workspace contents
+        with tarfile.open(archive_path, "w:gz") as tar:
+            tar.add(source_path, arcname=".")
+```
+
+### Using Your Custom Output
+
+Pass an instance of your format to `.output()` exactly like a built-in one:
+
+```python
+# Create the artifact
+a = Artifact({"ARTIFACT": "MyApp"})
+
+a.use(LocalSource("src"), dest=".")\\
+ .output("builds", "$ARTIFACT", format=TarGz())
+```
+
+## Writing Great Outputs
+
+- **Use `self._pre_output_cleanup(path)`**: The base class provides this helper to remove a stale file or directory before writing, keeping outputs reproducible across runs.
+- **Honor `output_path`**: It already has the templated name applied and its parent directory created. Append your extension to it rather than building a path from scratch.
+- **Keep `name` short**: It surfaces in every output log line, so a concise label (`zip`, `directory`, `tar.gz`) reads best.
+- **Stay stateless**: A format instance carries no per-artifact state, so the same instance can be reused across multiple `.output()` calls.

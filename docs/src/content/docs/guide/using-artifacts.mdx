@@ -69,14 +69,24 @@ If these aren't defined, the log prefix defaults to `[?]`.
 After performing transformations natively over your artifact, you eventually export it to the final destination via the `.output()` builder method.
 
 ```python
+from nautil.core.output_format import Zip
+
 artifact.output(
     output_path="builds",               # Base output directory
-    name="$ARTIFACT-$TARGET-v$VERSION", # Name string, evaluated via templating 
-    format=Artifact.OutputFormat.ZIP    # Outputformat (ZIP or DIRECTORY)
+    name="$ARTIFACT-$TARGET-v$VERSION", # Name string, evaluated via templating
+    format=Zip()                        # Output format instance (defaults to Zip())
 )
 ```
 
 ### Supported Formats
-There are two primary output formats:
-- `Artifact.OutputFormat.ZIP`: Compresses the workspace into a standalone `.zip` archive.
-- `Artifact.OutputFormat.DIRECTORY`: Outputs the raw flat filesystem as a standard directory, ideal for testing or local usage.
+There are two built-in output formats:
+- `Zip()`: Compresses the workspace into a standalone `.zip` archive.
+- `Directory()`: Outputs the raw flat filesystem as a standard directory, ideal for testing or local usage.
+
+Both live in `nautil.core.output_format`. If `format` is omitted, `Zip()` is used.
+
+:::caution[Deprecated]
+`Artifact.OutputFormat.ZIP` and `Artifact.OutputFormat.DIRECTORY` still work but are deprecated and emit a `DeprecationWarning`. Use `Zip()` and `Directory()` instead.
+:::
+
+Need a format that isn't built in? `OutputFormat` is an abstract base class you can implement yourself. See [Custom Outputs](/guide/custom-output) to ship your own.
